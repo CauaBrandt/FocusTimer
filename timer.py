@@ -30,11 +30,12 @@ def fmt(seconds):
     hours, ms = divmod(total_ms, 3600000)
     minutes, ms = divmod(ms, 60000)
     secs, ms = divmod(ms, 1000)
+    ms //= 10
     if hours:
-        return f"{hours:02d}:{minutes:02d}:{secs:02d}.{ms:03d}"
+        return f"{hours:02d}:{minutes:02d}:{secs:02d}.{ms:02d}"
     elif minutes:
-        return f"{minutes:02d}:{secs:02d}.{ms:03d}"
-    return f"{secs:02d}.{ms:03d}"
+        return f"{minutes:02d}:{secs:02d}.{ms:02d}"
+    return f"{secs:02d}.{ms:02d}"
 
 def grab_timer(event):
     global drag_x, drag_y
@@ -76,8 +77,10 @@ def tick():
     clock.config(text=fmt(timer))
     timer_id = root.after(10, tick)
 def check_timer():
+    global running
     if focused_app() not in TARGETS:
-        stop_timer(False)
+        if running:
+            stop_timer(False)
     else:
         start_timer()
     root.after(10, check_timer)
@@ -85,10 +88,12 @@ def check_timer():
 if __name__ == "__main__":
     clock = tk.Label(
         root,
-        text="00.00", 
+        text="00.00",
         font=("Consolas", 35),
         fg="#285064",
-        bg="#010101"
+        bg="#010101",
+        padx=15,
+        pady=5
     )
     clock.pack()
 
