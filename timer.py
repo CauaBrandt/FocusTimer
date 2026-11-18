@@ -1,18 +1,29 @@
 import tkinter as tk
 import time
+import ctypes
+import ctypes.wintypes
+import psutil
 
 root = tk.Tk()
 root.title = "Focus Timer"
-root.configure(
-    bg="black",
-)
+root.configure(bg="black")
 root.attributes("-topmost", True)
 root.overrideredirect(True)
 
-apps = []
+TARGETS = ["Code.exe"]
+user32 = ctypes.windll.user32
 timer = 0
 timer_id = ""
 running = False
+
+def focused_app():
+    current_window = user32.GetForegroundWindow()
+    pid = ctypes.wintypes.DWORD()
+    user32.GetWindowThreadProcessId(current_window, ctypes.byref(pid))
+    try:
+        return psutil.Process(pid.value).name()
+    except psutil.Error:
+        return "Error"
 
 def fmt(seconds):
     total_ms = int(seconds * 1000)
@@ -44,7 +55,7 @@ def start_timer(event=None):
     tick()
 def stop_timer(event=None):
     global timer_id, running
-    if not running:
+    if not running and event:
         start_timer()
         return
     running = False
@@ -58,12 +69,18 @@ def reset_timer(event=None):
     timer = 0
 
 def tick():
-    global timer, timer_id, start
+    global timer, timer_id, start, running
     now = time.perf_counter()
     timer += now - start
     start = now
     clock.config(text=fmt(timer))
     timer_id = root.after(10, tick)
+def check_timer():
+    if focused_app() not in TARGETS:
+        stop_timer(False)
+    else:
+        start_timer()
+    root.after(10, check_timer)
 
 if __name__ == "__main__":
     clock = tk.Label(
@@ -82,5 +99,7 @@ if __name__ == "__main__":
     root.bind("<p>", stop_timer)
     root.bind("<Insert>", reset_timer)
     root.bind("<Escape>", lambda e: root.destroy())
+
+    check_timer()
 
     root.mainloop()
