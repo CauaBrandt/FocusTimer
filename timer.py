@@ -10,7 +10,7 @@ root.configure(bg="black")
 root.attributes("-topmost", True)
 root.overrideredirect(True)
 
-TARGETS = ["Code.exe"]
+TARGETS = ["Code.exe", "Claude.exe", "Anki.exe"]
 user32 = ctypes.windll.user32
 timer = 0
 timer_id = ""
@@ -32,10 +32,10 @@ def fmt(seconds):
     secs, ms = divmod(ms, 1000)
     ms //= 10
     if hours:
-        return f"{hours:02d}:{minutes:02d}:{secs:02d}.{ms:02d}"
+        return f"{hours}:{minutes:02d}:{secs:02d}", f".{ms:02d}"
     elif minutes:
-        return f"{minutes:02d}:{secs:02d}.{ms:02d}"
-    return f"{secs:02d}.{ms:02d}"
+        return f"{minutes}:{secs:02d}", f".{ms:02d}"
+    return f"{secs}", f".{ms:02d}"
 
 def grab_timer(event):
     global drag_x, drag_y
@@ -51,7 +51,8 @@ def start_timer(event=None):
     if running:
         return
     running = True
-    clock.config(fg="#14ff1e")
+    main.config(fg="#14ff1e")
+    small.config(fg="#14ff1e")
     start = time.perf_counter()
     tick()
 def stop_timer(event=None):
@@ -60,13 +61,15 @@ def stop_timer(event=None):
         start_timer()
         return
     running = False
-    clock.config(fg="#00508c")
+    main.config(fg="#00508c")
+    small.config(fg="#00508c")
     root.after_cancel(timer_id)
 def reset_timer(event=None):
     global timer, running
     if running:
         stop_timer()
-    clock.config(text="00.00", fg="#285064")
+    main.config(text="00.00", fg="#285064")
+    small.config(text="00.00", fg="#285064")
     timer = 0
 
 def tick():
@@ -74,7 +77,9 @@ def tick():
     now = time.perf_counter()
     timer += now - start
     start = now
-    clock.config(text=fmt(timer))
+    rest, ms = fmt(timer)
+    main.config(text=rest)
+    small.config(text=ms)
     timer_id = root.after(10, tick)
 def check_timer():
     global running
@@ -86,16 +91,34 @@ def check_timer():
     root.after(10, check_timer)
 
 if __name__ == "__main__":
-    clock = tk.Label(
-        root,
-        text="00.00",
-        font=("Consolas", 35),
-        fg="#285064",
-        bg="#010101",
-        padx=15,
+    timer_frame = tk.Frame(
+        root, 
+        bg="black",
+        padx=10,
         pady=5
     )
-    clock.pack()
+    timer_frame.pack(anchor="e")
+    main = tk.Label(
+        timer_frame,
+        text="0.",
+        font=("Consolas", 35),
+        bg="black",
+        fg="#285064",   
+        width=7,
+        padx=0,
+        anchor="e"
+    )
+    main.pack(side="left", anchor="s")
+    small = tk.Label(
+        timer_frame,
+        text="00",
+        font=("Consolas", 30),
+        bg="black",
+        fg="#285064",
+        padx=0,
+        anchor="e"
+    )
+    small.pack(side="left", anchor="s")
 
     root.bind("<Button-1>", grab_timer)
     root.bind("<B1-Motion>", move_timer)
