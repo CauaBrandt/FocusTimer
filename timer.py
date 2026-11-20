@@ -86,7 +86,6 @@ def tick():
     timer_id = root.after(10, tick)
 def check_timer():
     global running
-    print(f"\r{auto_start.get()}", end="")
     if not auto_start.get():
         return
     if focused_app() not in TARGETS:
@@ -103,19 +102,23 @@ def show_menu(event):
         menu.grab_release()
 
 def open_settings():
-    win = tk.Toplevel(root)
+    win = tk.Toplevel(root, padx=10, pady=5)
     win.title("Settings")
-    win.geometry("600x600")
+    win.geometry("600x300")
 
-    process = tk.Frame(win)
-    process.pack(anchor="n")
-    tk.Label(process, text="Process Name: ").pack(side="left")
-    entry = tk.Entry(
-        process,
-        width=20
+    ctk.CTkLabel(win, text="Applications: ", font=("Consolas", 17), text_color="black").grid(row=0, column=0, stick="w")
+    entry = ctk.CTkEntry(
+        win,
+        fg_color="#e6e6e6",
+        text_color="black",
+        font=("Consolas", 14),
+        placeholder_text="Enter the app process name here.",
+        border_width=0,
+        width=30
     )
     entry.insert(0, TARGETS)
-    entry.pack(side="left")
+    entry.grid(row=0, column=1, pady=(5,0), stick="ew")
+    win.grid_columnconfigure(1, weight=1)
 
     def save():
         global TARGETS
@@ -131,7 +134,7 @@ def open_settings():
         corner_radius=10,
         width=120,
         height=30
-    ).pack()
+    ).place(relx=1, rely=1, anchor="s", x=-60, y=-20)
 
 if __name__ == "__main__":
     auto_start = tk.BooleanVar(value=True)
