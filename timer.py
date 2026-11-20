@@ -4,6 +4,7 @@ import time
 import ctypes
 import ctypes.wintypes
 import psutil
+import json
 
 
 root = tk.Tk()
@@ -11,14 +12,27 @@ root.title("Focus Timer")
 root.configure(bg="black")
 root.attributes("-topmost", True)
 root.overrideredirect(True)
+ 
+DEFAULTS = {"targets": "", "topmost": True, "auto_start": False}
 
-topmost = tk.BooleanVar(value=True)
+try:
+    with open("settings.json", "r") as f:
+        settings = {**DEFAULTS, **json.load(f)}
+except (FileNotFoundError, json.JSONDecodeError):
+    settings = DEFAULTS
 
-TARGETS = ["Code.exe", "claude.exe", "Anki.exe"]
+TARGETS = settings["targets"]
+topmost = tk.BooleanVar(value=settings["topmost"])
+auto_start = tk.BooleanVar(value=settings["auto_start"])
+
 user32 = ctypes.windll.user32
 timer = 0
 timer_id = ""
 running = False
+
+def save_settings(key, value):
+    with open("settings.json", "w") as f:
+        json.dump({**settings, key: value}, f, indent=4)
 
 def focused_app():
     current_window = user32.GetForegroundWindow()
@@ -116,13 +130,14 @@ def open_settings():
         border_width=0,
         width=30
     )
-    entry.insert(0, TARGETS)
+    entry.insert(0, " ".join(TARGETS))
     entry.grid(row=0, column=1, pady=(5,0), stick="ew")
     win.grid_columnconfigure(1, weight=1)
 
     def save():
         global TARGETS
         TARGETS = [target for target in entry.get().split(" ")]
+        save_settings("targets", TARGETS)
         win.destroy()
 
     ctk.CTkButton(
@@ -134,13 +149,12 @@ def open_settings():
         corner_radius=10,
         width=120,
         height=30
-    ).place(relx=1, rely=1, anchor="s", x=-60, y=-20)
+    ).place(relx=1, rely=1, anchor="s", x=-60, y=-10)
 
 if __name__ == "__main__":
-    auto_start = tk.BooleanVar(value=True)
     # Main Timer
     timer_frame = tk.Frame(
-        root, 
+        root,
         bg="black",
         padx=10,
         pady=5
@@ -170,9 +184,16 @@ if __name__ == "__main__":
 
     # Menu
     menu = tk.Menu(root, tearoff=0)
-    
-    menu.add_checkbutton(label="Always on top", variable=topmost, command=lambda: root.attributes("-topmost", topmost.get()))   
-    menu.add_checkbutton(label="Auto start", variable=auto_start, command=check_timer)
+
+    def on_always_on_top():
+        save_settings("topmost", topmost.get())
+        root.attributes("-topmost", topmost.get())
+    def on_auto_start():
+        save_settings("auto_start", auto_start.get())
+        check_timer()
+
+    menu.add_checkbutton(label="Always on top", variable=topmost, command=on_always_on_top)
+    menu.add_checkbutton(label="Auto start", variable=auto_start, command=on_auto_start)
     menu.add_command(label="Reset", command=reset_timer)
     menu.add_command(label="Settings", command=open_settings)
     menu.add_command(label="Exit", command=root.destroy)
