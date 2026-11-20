@@ -86,6 +86,9 @@ def tick():
     timer_id = root.after(10, tick)
 def check_timer():
     global running
+    print(f"\r{auto_start.get()}", end="")
+    if not auto_start.get():
+        return
     if focused_app() not in TARGETS:
         if running:
             stop_timer()
@@ -131,6 +134,7 @@ def open_settings():
     ).pack()
 
 if __name__ == "__main__":
+    auto_start = tk.BooleanVar(value=True)
     # Main Timer
     timer_frame = tk.Frame(
         root, 
@@ -163,11 +167,12 @@ if __name__ == "__main__":
 
     # Menu
     menu = tk.Menu(root, tearoff=0)
-
-    menu.add_checkbutton(label="Always on top", variable=topmost, command=lambda: root.attributes("-topmost", topmost.get()))
+    
+    menu.add_checkbutton(label="Always on top", variable=topmost, command=lambda: root.attributes("-topmost", topmost.get()))   
+    menu.add_checkbutton(label="Auto start", variable=auto_start, command=check_timer)
     menu.add_command(label="Reset", command=reset_timer)
     menu.add_command(label="Settings", command=open_settings)
-    menu.add_command(label="Quit", command=root.destroy)
+    menu.add_command(label="Exit", command=root.destroy)
 
     root.bind("<Button-1>", grab_timer)
     root.bind("<B1-Motion>", move_timer)
